@@ -1,0 +1,14 @@
+# ---
+# - name: start docker service
+#   service:
+#     name: docker
+#     state: started
+#
+# - name: systemd daemon-reload
+#   systemd:
+#     daemon-reload: yes
+#
+# - name: restart docker service
+#   service:
+#     name: docker
+#     state: restarted
