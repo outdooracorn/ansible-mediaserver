@@ -1,0 +1,63 @@
+---
+- name: Install sudo.
+  apt:
+    name: sudo
+    state: present
+  become: yes
+  become_method: su
+
+- name: Save current user as an ansible fact.
+  set_fact:
+    non_root_user="{{ ansible_user_id }}"
+
+- name: Add current user to the sudo group.
+  user:
+    name: "{{ non_root_user }}"
+    groups: sudo
+    append: yes
+  become: yes
+  become_method: su
+  when: non_root_user != "root"
+  register: add_sudo_group
+
+- name: Reset ssh connection to allow user changes to take affect.
+  meta: reset_connection
+  # meta tasks don't support when conditions (https://github.com/ansible/ansible/issues/27565)
+  # when: add_sudo_group.changed is True
+
+- name: Update and upgrade system.
+  apt:
+    update_cache: yes
+    upgrade: yes
+  become: yes
+
+- name: Install dependencies.
+  apt:
+    name:
+      - python3-setuptools
+  become: yes
+
+- name: Install pip3.
+  include_role:
+    name: geerlingguy.pip
+  vars:
+    pip_package: python3-pip
+  become: yes
+
+- name: Install pip packages.
+  pip:
+    name:
+      - docker
+      - docker-compose
+    # TODO: This doesn't seem to have any effect. Need the ansible_python_interpreter var to be set.
+    executable: /usr/bin/pip3
+
+- name: Install docker-ce.
+  include_role:
+    name: geerlingguy.docker
+  vars:
+    docker_apt_ignore_key_error: false
+    docker_install_compose: false
+    docker_users:
+      - "{{ docker_user | default(ansible_env.SUDO_USER) | default(ansible_env.USER) }}"
+  become: yes

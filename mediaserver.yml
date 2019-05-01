@@ -1,0 +1,31 @@
+---
+- hosts: "{{ host }}"
+  vars_prompt:
+    - name: "host"
+      prompt: "Which host(s) would you like to use?"
+      private: no
+
+  vars:
+    ansible_python_interpreter: python3
+    nfs_server_ip: 192.168.1.17
+
+    # set which user is added to the docker group (and therefore can use docker without root)
+    # docker_user: ollie
+
+  pre_tasks:
+    - debug: msg="pre_tasks"
+
+  roles:
+    - role: setup
+    - role: lae.nfs
+      nfs_mounts:
+        - path: /mnt/tv
+          remote_host: "{{ nfs_server_ip }}"
+          remote_path: /tv
+        - path: /mnt/films
+          remote_host: "{{ nfs_server_ip }}"
+          remote_path: /films
+      become: yes
+
+  tasks:
+    - debug: msg="tasks"
