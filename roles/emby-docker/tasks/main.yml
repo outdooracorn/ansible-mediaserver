@@ -1,0 +1,52 @@
+---
+- name: create group for emby
+  group:
+    name: "{{ group }}"
+    gid: "{{ group_id | default(omit) }}"
+    system: "{{ system | default('yes') }}"
+    state: present
+
+- name: create user for emby
+  user:
+    name: "{{ user }}"
+    uid: "{{ user_id | default(omit) }}"
+    group: "{{ group }}"
+    groups: "{{ extra_groups | default(omit) }}"
+    home: "{{ home_dir | default('/home/' + user) }}"
+    system: "{{ system | default('yes') }}"
+    shell: /bin/false
+    state: present
+
+- name: get emby user ID
+  command: id -u {{ user | quote }}
+  register: user_id
+  changed_when: False
+
+- set_fact: user_id={{ user_id.stdout }}
+
+- name: get emby group ID
+  command: id -g {{ user | quote }}
+  register: group_id
+  changed_when: False
+
+- set_fact: group_id={{ group_id.stdout }}
+
+#docker run -d --restart unless-stopped --volume /home/emby:/config --volume /mnt/tv:/mnt/tv --volume /mnt/films:/mnt/films --publish 8096:8096 --publish 8920:8920 --env UID=108 --env GID=111 --name emby emby/embyserver:latest
+- name: setup docker container
+  docker_container:
+    name: emby
+    image: emby/embyserver:latest
+    # TODO: make these configurable
+    volumes:
+      - /home/emby:/config
+      - /mnt/tv:/mnt/tv
+      - /mnt/films:/mnt/films
+    published_ports:
+      - 8096:8096
+      - 8920:8920
+    env:
+      UID: "{{ user_id }}"
+      GID: "{{ group_id }}"
+    restart_policy: unless-stopped
+    pull: "{{ pull | default('no')  }}"
+    # networks_cli_compatible: yes

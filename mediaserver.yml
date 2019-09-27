@@ -27,5 +27,8 @@
           remote_path: /films
       become: yes
 
+    - role: emby-docker
+      tags: [emby]
+     
   tasks:
     - debug: msg="tasks"

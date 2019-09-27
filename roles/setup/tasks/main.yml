@@ -1,36 +1,15 @@
 ---
-- name: Install sudo.
-  apt:
-    name: sudo
-    state: present
-  become: yes
-  become_method: su
-
-- name: Save current user as an ansible fact.
-  set_fact:
-    non_root_user="{{ ansible_user_id }}"
-
-- name: Add current user to the sudo group.
-  user:
-    name: "{{ non_root_user }}"
-    groups: sudo
-    append: yes
-  become: yes
-  become_method: su
-  when: non_root_user != "root"
-  register: add_sudo_group
-
-- name: Reset ssh connection to allow user changes to take affect.
-  meta: reset_connection
-  # meta tasks don't support when conditions (https://github.com/ansible/ansible/issues/27565)
-  # when: add_sudo_group.changed is True
+## TODO: Rename "setup" role to "system"?
+- import_tasks: install-sudo.yml
 
 - name: Update and upgrade system.
   apt:
     update_cache: yes
     upgrade: yes
   become: yes
+##
 
+## TODO: Move this to my docker role
 - name: Install dependencies.
   apt:
     name:
@@ -38,7 +17,7 @@
       - python3-pip
   become: yes
 
-- name: Install pip packages.
+- name: Install pip3 packages.
   pip:
     name:
       - docker
@@ -47,7 +26,7 @@
     executable: /usr/bin/pip3
 
 - name: Install docker-ce.
-  include_role:
+  import_role:
     name: geerlingguy.docker
   vars:
     docker_apt_ignore_key_error: false
@@ -55,3 +34,8 @@
     docker_users:
       - "{{ docker_user | default(ansible_env.SUDO_USER) | default(ansible_env.USER) }}"
   become: yes
+  when: ansible_distribution == 'Debian' and ansible_distribution_major_version|int <= 9
+
+# TODO: Install docker.io if Debian >= 10
+# TODO: Install docker snap if Ubuntu
+##

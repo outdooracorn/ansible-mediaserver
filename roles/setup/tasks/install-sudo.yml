@@ -1,0 +1,26 @@
+---
+- name: Install sudo.
+  apt:
+    name: sudo
+    state: present
+  become: yes
+  become_method: su
+
+- name: Save current user as an ansible fact.
+  set_fact:
+    non_root_user="{{ ansible_user_id }}"
+
+- name: Add current user to the sudo group.
+  user:
+    name: "{{ non_root_user }}"
+    groups: sudo
+    append: yes
+  become: yes
+  become_method: su
+  when: non_root_user != "root"
+  register: add_sudo_group
+
+- name: Reset ssh connection to allow user changes to take affect.
+  meta: reset_connection
+  # meta tasks don't support when conditions (https://github.com/ansible/ansible/issues/27565)
+  # when: add_sudo_group.changed is True
