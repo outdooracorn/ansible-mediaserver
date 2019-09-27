@@ -35,13 +35,7 @@
   apt:
     name:
       - python3-setuptools
-  become: yes
-
-- name: Install pip3.
-  include_role:
-    name: geerlingguy.pip
-  vars:
-    pip_package: python3-pip
+      - python3-pip
   become: yes
 
 - name: Install pip packages.
