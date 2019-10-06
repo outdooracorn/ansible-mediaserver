@@ -1,3 +1,10 @@
 ---
 user: emby
 group: emby
+user_id: "{{ omit }}" # 108
+group_id: "{{ omit }}" # 111
+extra_groups: "{{ omit }}"
+home_dir: "/home/{{user}}"
+system: yes
+
+config_dir: "{{ home_dir }}"

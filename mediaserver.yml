@@ -28,7 +28,9 @@
       become: yes
 
     - role: emby-docker
-      tags: [emby]
+      tags: [emby, docker]
+    - role: deluge-docker
+      tags: [deluge, docker]
      
   tasks:
     - debug: msg="tasks"

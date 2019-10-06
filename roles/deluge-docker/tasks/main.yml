@@ -1,0 +1,54 @@
+---
+- name: create group for deluge
+  group:
+    name: "{{ group }}"
+    gid: "{{ group_id }}"
+    system: "{{ system }}"
+    state: present
+  become: yes
+
+- name: create user for deluge
+  user:
+    name: "{{ user }}"
+    uid: "{{ user_id }}"
+    group: "{{ group }}"
+    groups: "{{ extra_groups }}"
+    home: "{{ home_dir }}"
+    system: "{{ system }}"
+    shell: /bin/false
+    state: present
+  become: yes
+
+- name: get deluge user ID
+  command: id -u {{ user | quote }}
+  register: deluge_user_id
+  changed_when: False
+
+- set_fact: deluge_user_id={{ deluge_user_id.stdout }}
+
+- name: get deluge group ID
+  command: id -g {{ user | quote }}
+  register: deluge_group_id
+  changed_when: False
+
+- set_fact: deluge_group_id={{ deluge_group_id.stdout }}
+
+- name: setup docker container
+  docker_container:
+    name: deluge
+    image: linuxserver/deluge:latest
+    volumes:
+      - "{{ config_dir }}:/config"
+      - "{{ download_dir }}:/downloads"
+    network_mode: host
+    # TODO: Remove ports?
+#    published_ports:
+#      - 8096:8096
+#      - 8920:8920
+    env:
+      PUID: "{{ deluge_user_id }}"
+      PGID: "{{ deluge_group_id }}"
+      # TODO: Make configurable?
+      TZ: Europe/London
+    restart_policy: unless-stopped
+    pull: "{{ pull | default('no')  }}"
