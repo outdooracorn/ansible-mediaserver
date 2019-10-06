@@ -1,0 +1,53 @@
+---
+- name: create group for medusa
+  group:
+    name: "{{ group }}"
+    gid: "{{ group_id }}"
+    system: "{{ system }}"
+    state: present
+  become: yes
+
+- name: create user for medusa
+  user:
+    name: "{{ user }}"
+    uid: "{{ user_id }}"
+    group: "{{ group }}"
+    groups: "{{ extra_groups }}"
+    home: "{{ home_dir }}"
+    system: "{{ system }}"
+    shell: /bin/false
+    state: present
+  become: yes
+
+- name: get medusa user ID
+  command: id -u {{ user | quote }}
+  register: medusa_user_id
+  changed_when: False
+
+- set_fact: medusa_user_id={{ medusa_user_id.stdout }}
+
+- name: get medusa group ID
+  command: id -g {{ user | quote }}
+  register: medusa_group_id
+  changed_when: False
+
+- set_fact: medusa_group_id={{ medusa_group_id.stdout }}
+
+- name: setup docker container
+  docker_container:
+    name: medusa
+    image: linuxserver/medusa:latest
+    volumes:
+      - "{{ config_dir }}:/config"
+      - "{{ download_dir }}:/downloads"
+      - "{{ tv_dir }}:/tv"
+    published_ports:
+      # TODO: Make configurable?
+      - 8081:8081
+    env:
+      PUID: "{{ medusa_user_id }}"
+      PGID: "{{ medusa_group_id }}"
+      # TODO: Make configurable?
+      TZ: Europe/London
+    restart_policy: unless-stopped
+    pull: "{{ pull | default('no')  }}"

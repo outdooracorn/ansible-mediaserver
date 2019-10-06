@@ -33,6 +33,9 @@
       tags: [deluge, docker]
     - role: nzbget-docker
       tags: [nzbget, docker]
+    - role: medusa-docker
+      tv_dir: /mnt/tv
+      tags: [medusa, docker]
      
   tasks:
     - debug: msg="tasks"
