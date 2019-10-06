@@ -1,0 +1,53 @@
+---
+- name: create group for nzbget
+  group:
+    name: "{{ group }}"
+    gid: "{{ group_id }}"
+    system: "{{ system }}"
+    state: present
+  become: yes
+
+- name: create user for nzbget
+  user:
+    name: "{{ user }}"
+    uid: "{{ user_id }}"
+    group: "{{ group }}"
+    groups: "{{ extra_groups }}"
+    home: "{{ home_dir }}"
+    system: "{{ system }}"
+    shell: /bin/false
+    state: present
+  become: yes
+
+- name: get nzbget user ID
+  command: id -u {{ user | quote }}
+  register: nzbget_user_id
+  changed_when: False
+
+- set_fact: nzbget_user_id={{ nzbget_user_id.stdout }}
+
+- name: get nzbget group ID
+  command: id -g {{ user | quote }}
+  register: nzbget_group_id
+  changed_when: False
+
+- set_fact: nzbget_group_id={{ nzbget_group_id.stdout }}
+
+- name: setup docker container
+  docker_container:
+    name: nzbget
+    image: linuxserver/nzbget:latest
+    volumes:
+      - "{{ config_dir }}:/config"
+      - "{{ download_dir }}:/downloads"
+    network_mode: host
+    # TODO: Remove ports?
+#    published_ports:
+#      - 6789:6789
+    env:
+      PUID: "{{ nzbget_user_id }}"
+      PGID: "{{ nzbget_group_id }}"
+      # TODO: Make configurable?
+      TZ: Europe/London
+    restart_policy: unless-stopped
+    pull: "{{ pull | default('no')  }}"

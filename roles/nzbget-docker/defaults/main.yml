@@ -1,0 +1,11 @@
+---
+user: nzbget
+group: nzbget
+user_id: "{{ omit }}"
+group_id: "{{ omit }}"
+extra_groups: "{{ omit }}"
+home_dir: "/home/{{user}}"
+system: yes
+
+config_dir: "{{ home_dir }}"
+download_dir: "{{ home_dir }}/downloads"
